@@ -32,9 +32,18 @@ def download_sec_data() -> Dict[str, Any]:
     """Download the latest SEC company data."""
     logger.info("Downloading SEC company data...")
     
-    # Allow users to set their own User-Agent via environment variable
-    default_user_agent = 'secmap-python-package noreply@github.com'
+    # Get user agent from environment variable with SEC-compliant default
+    # SEC requires User-Agent with contact information for fair access policy
+    default_user_agent = 'sec-company-lookup/1.0 (jpnewman167@gmail.com)'
     user_agent = os.getenv('SECMAP_USER_AGENT', default_user_agent)
+    
+    # Validate user agent format (similar to SEC Edgar toolkit)
+    if not user_agent or len(user_agent.strip()) < 10:
+        raise ValueError(
+            "User-Agent is required and must include contact information. "
+            "Format: 'AppName/Version (contact@email.com)'. "
+            "Set SECMAP_USER_AGENT environment variable or use default."
+        )
     
     headers = {
         'User-Agent': user_agent,
