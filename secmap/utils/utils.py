@@ -23,7 +23,7 @@ DATA_FILE = CACHE_DIR / "company_data.json"
 CACHE_EXPIRY_HOURS = 24  # Refresh data every 24 hours
 
 
-def ensure_cache_dir():
+def ensure_cache_dir() -> None:
     """Ensure the cache directory exists."""
     CACHE_DIR.mkdir(exist_ok=True)
 
@@ -56,7 +56,7 @@ def download_sec_data() -> Dict[str, Any]:
     try:
         response = requests.get(SEC_DATA_URL, headers=headers, timeout=30)
         response.raise_for_status()
-        data = response.json()
+        data = response.json()  # type: ignore[no-any-return]
 
         # Save raw data to file
         ensure_cache_dir()
@@ -64,7 +64,7 @@ def download_sec_data() -> Dict[str, Any]:
             json.dump(data, f)
 
         logger.info(f"Downloaded data for {len(data)} companies")
-        return data
+        return data  # type: ignore[no-any-return]
 
     except requests.RequestException as e:
         logger.error(f"Failed to download SEC data: {e}")
@@ -72,7 +72,7 @@ def download_sec_data() -> Dict[str, Any]:
         if DATA_FILE.exists():
             logger.info("Loading from cached file...")
             with open(DATA_FILE, "r") as f:
-                return json.load(f)
+                return json.load(f)  # type: ignore[no-any-return]
         raise
 
 
@@ -99,7 +99,7 @@ def load_from_cache() -> Tuple[Optional[Dict[str, Any]], float]:
             file_age_hours = (time.time() - DATA_FILE.stat().st_mtime) / 3600
             if file_age_hours <= CACHE_EXPIRY_HOURS:
                 with open(DATA_FILE, "r") as f:
-                    data = json.load(f)
+                    data = json.load(f)  # type: ignore[no-any-return]
                 last_update = DATA_FILE.stat().st_mtime
                 logger.info("Loaded data from file cache")
                 return data, last_update
@@ -109,7 +109,7 @@ def load_from_cache() -> Tuple[Optional[Dict[str, Any]], float]:
     return None, 0
 
 
-def normalize_cik(cik_raw) -> Optional[int]:
+def normalize_cik(cik_raw: Any) -> Optional[int]:
     """
     Normalize CIK to integer format.
 
@@ -128,7 +128,7 @@ def normalize_cik(cik_raw) -> Optional[int]:
         return None
 
 
-def clear_cache_files():
+def clear_cache_files() -> None:
     """Remove cache files from disk."""
     from ..db.db import DB_PATH
 
