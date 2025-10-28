@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secmap"
+version = "0.1.0"
+description = "Fast, cached SEC company data lookups by ticker, CIK, or company name"
+readme = "README.md"
+requires-python = ">=3.7"
+license = "MIT"
+authors = [
+    {name = "Jackson Newman", email = "jpnewman167@gmail.com"}
+]
+keywords = ["SEC", "CIK", "ticker", "finance", "company", "lookup", "cache"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "requests>=2.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "flake8",
+    "mypy",
+]
+
+[project.urls]
+Homepage = "https://github.com/JNewman-cell/secmap"
+Repository = "https://github.com/JNewman-cell/secmap"
+Issues = "https://github.com/JNewman-cell/secmap/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["secmap*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py37']
+
+[tool.mypy]
+python_version = "3.7"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
