@@ -33,22 +33,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Global in-memory cache
-_memory_cache = {}
-_last_update = 0
+_memory_cache: Dict[str, Any] = {}
+_last_update: float = 0
 
 
-def _load_data_to_memory(data: Dict[str, Any]):
+def _load_data_to_memory(data: Dict[str, Any]) -> None:
     """Load company data into memory cache with optimized structure supporting multiple matches."""
     global _memory_cache, _last_update
 
     # Use a more memory-efficient structure
     # Store each company once and reference by ID
     companies = {}  # id -> company_data
-    ticker_index = {}  # ticker -> id (one-to-one for tickers)
-    cik_index = {}  # cik -> list of ids (one-to-many for CIKs)
-    name_index = {}  # name -> list of ids (one-to-many for names)
+    ticker_index: Dict[str, str] = {}  # ticker -> id (one-to-one for tickers)
+    cik_index: Dict[int, List[str]] = {}  # cik -> list of ids (one-to-many for CIKs)
+    name_index: Dict[str, List[str]] = {}  # name -> list of ids (one-to-many for names)
 
-    company_id = 0
+    company_id_counter = 0
     for key, company_info in data.items():
         if isinstance(company_info, dict):
             cik_raw = company_info.get("cik_str", "")
@@ -58,6 +58,7 @@ def _load_data_to_memory(data: Dict[str, Any]):
             cik_int = normalize_cik(cik_raw)
 
             if cik_int is not None and ticker and title:
+                company_id = str(company_id_counter)
                 company_data = {"cik": cik_int, "ticker": ticker, "title": title}
 
                 companies[company_id] = company_data
@@ -76,7 +77,7 @@ def _load_data_to_memory(data: Dict[str, Any]):
                     name_index[name_lower] = []
                 name_index[name_lower].append(company_id)
 
-                company_id += 1
+                company_id_counter += 1
 
     _memory_cache = {
         "companies": companies,
@@ -96,7 +97,7 @@ def _load_data_to_memory(data: Dict[str, Any]):
     )
 
 
-def _ensure_data_loaded():
+def _ensure_data_loaded() -> None:
     """Ensure data is loaded, updating if necessary."""
     global _last_update
 
@@ -149,9 +150,9 @@ def get_company_by_ticker(ticker: str) -> Optional[Dict[str, Any]]:
         return None
 
     _ensure_data_loaded()
-    company_id = _memory_cache["by_ticker"].get(ticker.strip().upper())
+    company_id = _memory_cache["by_ticker"].get(ticker.strip().upper())  # type: ignore[attr-defined]
     if company_id is not None:
-        return _memory_cache["companies"][company_id]
+        return _memory_cache["companies"][company_id]  # type: ignore[no-any-return,index]
     return None
 
 
@@ -174,8 +175,8 @@ def get_company_by_cik(cik: Union[int, str]) -> List[Dict[str, Any]]:
     if cik_int is None:
         return []
 
-    company_ids = _memory_cache["by_cik"].get(cik_int, [])
-    return [_memory_cache["companies"][company_id] for company_id in company_ids]
+    company_ids = _memory_cache["by_cik"].get(cik_int, [])  # type: ignore[attr-defined]
+    return [_memory_cache["companies"][company_id] for company_id in company_ids]  # type: ignore[index]
 
 
 def get_company_by_name(name: str, fuzzy: bool = False) -> List[Dict[str, Any]]:
@@ -199,19 +200,19 @@ def get_company_by_name(name: str, fuzzy: bool = False) -> List[Dict[str, Any]]:
 
     # Exact match first
     name_lower = name.strip().lower()
-    company_ids = _memory_cache["by_name"].get(name_lower, [])
+    company_ids = _memory_cache["by_name"].get(name_lower, [])  # type: ignore[attr-defined]
     for company_id in company_ids:
         if company_id not in seen_company_ids:
-            results.append(_memory_cache["companies"][company_id])
+            results.append(_memory_cache["companies"][company_id])  # type: ignore[index]
             seen_company_ids.add(company_id)
 
     # Fuzzy matching if requested and no exact matches found
     if fuzzy and not results:
-        for cached_name, comp_ids in _memory_cache["by_name"].items():
+        for cached_name, comp_ids in _memory_cache["by_name"].items():  # type: ignore[attr-defined]
             if name_lower in cached_name or cached_name in name_lower:
                 for comp_id in comp_ids:
                     if comp_id not in seen_company_ids:
-                        results.append(_memory_cache["companies"][comp_id])
+                        results.append(_memory_cache["companies"][comp_id])  # type: ignore[index]
                         seen_company_ids.add(comp_id)
 
     return results
@@ -243,15 +244,15 @@ def get_company(identifier: Union[str, int]) -> List[Dict[str, Any]]:
             return []
 
         # Try ticker first (most common case)
-        result = get_company_by_ticker(identifier)
-        if result:
-            return [result]  # Wrap single result in list for consistency
+        ticker_result = get_company_by_ticker(identifier)
+        if ticker_result:
+            return [ticker_result]  # Wrap single result in list for consistency
 
         # Try CIK if it's numeric
         if identifier.strip().isdigit():
-            result = get_company_by_cik(identifier)
-            if result:
-                return result
+            cik_result = get_company_by_cik(identifier)
+            if cik_result:
+                return cik_result
 
         # Try company name
         return get_company_by_name(identifier, fuzzy=True)
@@ -286,16 +287,16 @@ def search_companies(
     query_lower = query_stripped.lower()
 
     # Check for exact ticker match first
-    company_id = _memory_cache["by_ticker"].get(query_upper)
+    company_id = _memory_cache["by_ticker"].get(query_upper)  # type: ignore[attr-defined]
     if company_id is not None:
-        results.append(_memory_cache["companies"][company_id])
+        results.append(_memory_cache["companies"][company_id])  # type: ignore[index]
         seen_ids.add(company_id)
 
     # Check for exact company name match
-    company_ids = _memory_cache["by_name"].get(query_lower, [])
+    company_ids = _memory_cache["by_name"].get(query_lower, [])  # type: ignore[attr-defined]
     for company_id in company_ids:
         if company_id not in seen_ids:
-            results.append(_memory_cache["companies"][company_id])
+            results.append(_memory_cache["companies"][company_id])  # type: ignore[index]
             seen_ids.add(company_id)
 
     # If we have enough results from exact matches and fuzzy is disabled, return early
@@ -353,19 +354,19 @@ def _search_companies_memory(
     if fuzzy:
         # Fuzzy search: partial matching
         # Search by ticker first
-        for ticker, company_id in _memory_cache["by_ticker"].items():
+        for ticker, company_id in _memory_cache["by_ticker"].items():  # type: ignore[attr-defined]
             if query_lower in ticker.lower() and company_id not in seen_ids:
-                results.append(companies[company_id])
+                results.append(companies[company_id])  # type: ignore[index]
                 seen_ids.add(company_id)
                 if len(results) >= limit:
                     break
 
         # Search by company name if we need more results
         if len(results) < limit:
-            for name, company_ids in _memory_cache["by_name"].items():
+            for name, company_ids in _memory_cache["by_name"].items():  # type: ignore[attr-defined]
                 for company_id in company_ids:
                     if company_id not in seen_ids and query_lower in name:
-                        results.append(companies[company_id])
+                        results.append(companies[company_id])  # type: ignore[index]
                         seen_ids.add(company_id)
                         if len(results) >= limit:
                             break
@@ -398,7 +399,7 @@ def get_companies_by_ciks(
 
     # Normalize CIKs to integers
     normalized_ciks = []
-    cik_mapping = {}  # maps normalized CIK back to original
+    cik_mapping: Dict[int, List[Any]] = {}  # maps normalized CIK back to original
 
     for original_cik in ciks:
         normalized_cik = normalize_cik(original_cik)
@@ -454,7 +455,7 @@ def get_companies_by_company_names(
     _ensure_data_loaded()
 
     # First check in-memory cache for exact matches
-    results = {}
+    results: Dict[str, List[Dict[str, Any]]] = {}
     remaining_names = []
 
     for company_name in company_names:
@@ -463,12 +464,12 @@ def get_companies_by_company_names(
             continue
 
         query_lower = company_name.strip().lower()
-        company_ids = _memory_cache["by_name"].get(query_lower, [])
+        company_ids = _memory_cache["by_name"].get(query_lower, [])  # type: ignore[attr-defined]
 
         if company_ids:
             # Found exact match in cache
             results[company_name] = [
-                _memory_cache["companies"][company_id] for company_id in company_ids
+                _memory_cache["companies"][company_id] for company_id in company_ids  # type: ignore[index]
             ]
             if not fuzzy:
                 # If not fuzzy, we're done with this name
@@ -546,9 +547,9 @@ def search_companies_by_company_name(
     query_lower = query_stripped.lower()
 
     # Check for exact company name match first
-    company_ids = _memory_cache["by_name"].get(query_lower, [])
+    company_ids = _memory_cache["by_name"].get(query_lower, [])  # type: ignore[attr-defined]
     for company_id in company_ids:
-        results.append(_memory_cache["companies"][company_id])
+        results.append(_memory_cache["companies"][company_id])  # type: ignore[index]
         seen_ids.add(company_id)
 
     # If we have enough results from exact matches and fuzzy is disabled, return early
@@ -621,7 +622,7 @@ def get_companies_by_sector_search(
         return []
 
 
-def clear_cache():
+def clear_cache() -> None:
     """Clear all cached data including database."""
     global _memory_cache, _last_update
 
@@ -651,7 +652,7 @@ def get_cache_info() -> Dict[str, Any]:
     db_stats = get_db_stats()
 
     return {
-        "companies_cached": len(_memory_cache.get("companies", {})),
+        "companies_cached": len(_memory_cache.get("companies", {})),  # type: ignore[arg-type]
         "last_update": _last_update,
         "cache_age_hours": (
             (time.time() - _last_update) / 3600 if _last_update else None
@@ -663,9 +664,9 @@ def get_cache_info() -> Dict[str, Any]:
         "data_file_exists": True,  # Will be checked in utils
         **db_stats,
         "memory_cache_structure": {
-            "companies": len(_memory_cache.get("companies", {})),
-            "tickers_indexed": len(_memory_cache.get("by_ticker", {})),
-            "ciks_indexed": len(_memory_cache.get("by_cik", {})),
-            "names_indexed": len(_memory_cache.get("by_name", {})),
+            "companies": len(_memory_cache.get("companies", {})),  # type: ignore[arg-type]
+            "tickers_indexed": len(_memory_cache.get("by_ticker", {})),  # type: ignore[arg-type]
+            "ciks_indexed": len(_memory_cache.get("by_cik", {})),  # type: ignore[arg-type]
+            "names_indexed": len(_memory_cache.get("by_name", {})),  # type: ignore[arg-type]
         },
     }

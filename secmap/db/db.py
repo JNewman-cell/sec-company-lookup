@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 DB_PATH = CACHE_DIR / "secmap.db"
 
 
-def init_database():
+def init_database() -> None:
     """Initialize SQLite database optimized for search operations."""
     from ..utils.utils import ensure_cache_dir
 
@@ -58,7 +58,7 @@ def init_database():
     conn.close()
 
 
-def load_data_to_db(data: Dict[str, Any]):
+def load_data_to_db(data: Dict[str, Any]) -> None:
     """Load company data into SQLite database optimized for search operations."""
     init_database()
 
@@ -256,7 +256,7 @@ def get_companies_by_ciks_db(ciks: List[int]) -> Dict[int, List[Dict[str, Any]]]
             ciks,
         )
 
-        results = {}
+        results: Dict[int, List[Dict[str, Any]]] = {}
         for row in cursor:
             company = {
                 "cik": row["cik"],
@@ -302,7 +302,7 @@ def get_companies_by_company_names_db(
     conn.row_factory = sqlite3.Row
 
     try:
-        results = {}
+        results: Dict[str, List[Dict[str, Any]]] = {}
 
         for company_name in company_names:
             if not company_name or not company_name.strip():
@@ -455,7 +455,7 @@ def get_companies_by_sector_search_db(
     try:
         # Build search query for multiple keywords
         conditions = []
-        params = []
+        params: List[Any] = []
 
         for keyword in sector_keywords:
             conditions.append("title LIKE ?")
