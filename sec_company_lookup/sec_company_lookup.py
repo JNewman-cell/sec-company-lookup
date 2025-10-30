@@ -165,30 +165,31 @@ def get_company_by_ticker_single(ticker: str) -> SingleLookupResponse:
         return {
             "success": False,
             "error": "Invalid ticker: empty or whitespace",
-            "error_code": "INVALID_INPUT"
+            "error_code": "INVALID_INPUT",
         }
 
     ensure_data_loaded()
     company_id = _memory_cache["by_ticker"].get(
-        ticker.strip().upper())  # type: ignore[attr-defined]
+        ticker.strip().upper()
+    )  # type: ignore[attr-defined]
     if company_id is not None:
         return {
             "success": True,
-            "data": _memory_cache["companies"][company_id]  # type: ignore[typeddict-item]
+            "data": _memory_cache["companies"][company_id],  # type: ignore[typeddict-item]
         }
     return {
         "success": False,
         "error": f"Ticker '{ticker}' not found",
-        "error_code": "NOT_FOUND"
+        "error_code": "NOT_FOUND",
     }
 
 
 def get_companies_by_tickers_batch(
-    tickers: Sequence[str]
+    tickers: Sequence[str],
 ) -> Dict[str, BatchLookupResponse]:
     """
     Backend implementation: Batch ticker lookup.
-    
+
     Args:
         tickers: Sequence of ticker strings
 
@@ -197,13 +198,13 @@ def get_companies_by_tickers_batch(
     """
     if not tickers:
         return {}
-    
+
     ensure_data_loaded()
-    
+
     # Normalize tickers and track invalid inputs
     ticker_map = {t.strip().upper(): t for t in tickers if t and t.strip()}
     normalized_tickers = list(ticker_map.keys())
-    
+
     # Handle empty/invalid tickers
     results: Dict[str, BatchLookupResponse] = {}
     for t in tickers:
@@ -211,9 +212,9 @@ def get_companies_by_tickers_batch(
             results[t] = {
                 "success": False,
                 "error": "Invalid ticker: empty or whitespace",
-                "error_code": "INVALID_INPUT"
+                "error_code": "INVALID_INPUT",
             }
-    
+
     # Use database for batch operations
     try:
         db_results = get_companies_by_tickers_db(normalized_tickers)
@@ -223,13 +224,13 @@ def get_companies_by_tickers_batch(
             if companies:
                 results[original_ticker] = {
                     "success": True,
-                    "data": cast(CompanyData, companies[0])
+                    "data": cast(CompanyData, companies[0]),
                 }
             else:
                 results[original_ticker] = {
                     "success": False,
                     "error": f"Ticker '{original_ticker}' not found",
-                    "error_code": "NOT_FOUND"
+                    "error_code": "NOT_FOUND",
                 }
     except (sqlite3.Error, Exception) as e:
         logger.warning(f"Database ticker lookup failed: {e}")
@@ -238,7 +239,7 @@ def get_companies_by_tickers_batch(
             original_ticker = ticker_map[ticker_upper]
             single_response = get_company_by_ticker_single(ticker_upper)
             results[original_ticker] = cast(BatchLookupResponse, single_response)
-    
+
     return results
 
 
@@ -249,7 +250,7 @@ def get_company_by_cik_single(cik: Union[int, str]) -> MultipleLookupResponse:
         return {
             "success": False,
             "error": f"Invalid CIK: '{cik}' could not be normalized",
-            "error_code": "INVALID_INPUT"
+            "error_code": "INVALID_INPUT",
         }
 
     ensure_data_loaded()
@@ -257,25 +258,22 @@ def get_company_by_cik_single(cik: Union[int, str]) -> MultipleLookupResponse:
     company_list: List[CompanyData] = [
         _memory_cache["companies"][company_id] for company_id in company_ids
     ]  # type: ignore[misc]
-    
+
     if company_list:
-        return {
-            "success": True,
-            "data": company_list
-        }
+        return {"success": True, "data": company_list}
     return {
         "success": False,
         "error": f"CIK '{cik}' not found",
-        "error_code": "NOT_FOUND"
+        "error_code": "NOT_FOUND",
     }
 
 
 def get_companies_by_ciks_batch(
-    ciks: Sequence[Union[int, str]]
+    ciks: Sequence[Union[int, str]],
 ) -> Dict[Union[int, str], MultipleLookupResponse]:
     """
     Backend implementation: Batch CIK lookup.
-    
+
     Args:
         ciks: Sequence of CIK identifiers
 
@@ -284,14 +282,14 @@ def get_companies_by_ciks_batch(
     """
     if not ciks:
         return {}
-    
+
     ensure_data_loaded()
-    
+
     # Normalize CIKs
     normalized_ciks: List[int] = []
     cik_map: Dict[int, Union[int, str]] = {}
     invalid_ciks: List[Union[int, str]] = []
-    
+
     for c in ciks:
         cik_int = normalize_cik(c)
         if cik_int is not None:
@@ -299,16 +297,16 @@ def get_companies_by_ciks_batch(
             cik_map[cik_int] = c
         else:
             invalid_ciks.append(c)
-    
+
     # Initialize results with errors for invalid CIKs
     results: Dict[Union[int, str], MultipleLookupResponse] = {}
     for c in invalid_ciks:
         results[c] = {
             "success": False,
             "error": f"Invalid CIK: '{c}' could not be normalized",
-            "error_code": "INVALID_INPUT"
+            "error_code": "INVALID_INPUT",
         }
-    
+
     # Use database for batch operations
     try:
         db_results = get_companies_by_ciks_db(normalized_ciks)
@@ -317,26 +315,23 @@ def get_companies_by_ciks_batch(
             original_cik = cik_map[cik_int]
             company_list = [cast(CompanyData, c) for c in companies]
             if company_list:
-                results[original_cik] = {
-                    "success": True,
-                    "data": company_list
-                }
+                results[original_cik] = {"success": True, "data": company_list}
             else:
                 results[original_cik] = {
                     "success": False,
                     "error": f"CIK '{original_cik}' not found",
-                    "error_code": "NOT_FOUND"
+                    "error_code": "NOT_FOUND",
                 }
-        
+
         # Ensure all valid CIKs are in results (even if not in db_results)
         for original_cik in cik_map.values():
             if original_cik not in results:
                 results[original_cik] = {
                     "success": False,
                     "error": f"CIK '{original_cik}' not found",
-                    "error_code": "NOT_FOUND"
+                    "error_code": "NOT_FOUND",
                 }
-                
+
         return results
     except (sqlite3.Error, Exception) as e:
         logger.warning(f"Database CIK lookup failed: {e}")
@@ -354,7 +349,7 @@ def get_company_by_name_single(name: str, fuzzy: bool = False) -> SingleLookupRe
         return {
             "success": False,
             "error": "Invalid name: empty or whitespace",
-            "error_code": "INVALID_INPUT"
+            "error_code": "INVALID_INPUT",
         }
 
     ensure_data_loaded()
@@ -367,58 +362,55 @@ def get_company_by_name_single(name: str, fuzzy: bool = False) -> SingleLookupRe
         # Exact match found with single result
         return {
             "success": True,
-            "data": _memory_cache["companies"][company_ids[0]]  # type: ignore[index]
+            "data": _memory_cache["companies"][company_ids[0]],  # type: ignore[index]
         }
     elif len(company_ids) > 1:
         # Multiple exact matches - return first one
         return {
             "success": True,
-            "data": _memory_cache["companies"][company_ids[0]]  # type: ignore[index]
+            "data": _memory_cache["companies"][company_ids[0]],  # type: ignore[index]
         }
 
     # No exact match - progressively shorten name from the end until we find exactly one result
     if fuzzy:
         words = name_stripped.split()
-        
+
         while len(words) > 0:
             # Try current shortened name
             shortened = " ".join(words).lower()
             matching_companies: List[CompanyData] = []
-            
+
             for cached_name, comp_ids in _memory_cache["by_name"].items():  # type: ignore[attr-defined]
                 if shortened in cached_name:
                     for comp_id in comp_ids:
                         matching_companies.append(_memory_cache["companies"][comp_id])  # type: ignore[index]
-            
+
             # If we found exactly one result, return it
             if len(matching_companies) == 1:
-                return {
-                    "success": True,
-                    "data": matching_companies[0]
-                }
-            
+                return {"success": True, "data": matching_companies[0]}
+
             # If we found multiple results, quit - shortening further won't help
             if len(matching_companies) > 1:
                 return {
                     "success": False,
                     "error": f"Company name '{name}' does not match any name",
-                    "error_code": "NOT_FOUND"
+                    "error_code": "NOT_FOUND",
                 }
-            
+
             # Remove last word and try again
             words.pop()
-        
+
         # If we've exhausted all words without finding any match, return error
         return {
             "success": False,
             "error": f"Company name '{name}' does not match any name",
-            "error_code": "NOT_FOUND"
+            "error_code": "NOT_FOUND",
         }
 
     return {
         "success": False,
         "error": f"Company name '{name}' not found",
-        "error_code": "NOT_FOUND"
+        "error_code": "NOT_FOUND",
     }
 
 
@@ -427,7 +419,7 @@ def get_companies_by_names_batch(
 ) -> Dict[str, BatchLookupResponse]:
     """
     Backend implementation: Batch name lookup.
-    
+
     Args:
         names: List of company names
         fuzzy: If True, perform fuzzy matching
@@ -438,9 +430,9 @@ def get_companies_by_names_batch(
     """
     if not names:
         return {}
-    
+
     ensure_data_loaded()
-    
+
     # Filter and track invalid names
     results: Dict[str, BatchLookupResponse] = {}
     valid_names: List[str] = []
@@ -449,11 +441,11 @@ def get_companies_by_names_batch(
             results[name] = {
                 "success": False,
                 "error": "Invalid name: empty or whitespace",
-                "error_code": "INVALID_INPUT"
+                "error_code": "INVALID_INPUT",
             }
         else:
             valid_names.append(name)
-    
+
     # Use database for batch operations
     try:
         db_results = get_companies_by_company_names_db(valid_names, fuzzy=fuzzy)
@@ -461,26 +453,23 @@ def get_companies_by_names_batch(
             company_list = [cast(CompanyData, c) for c in companies]
             if company_list:
                 # Return only the first (best) match
-                results[name] = {
-                    "success": True,
-                    "data": company_list[0]
-                }
+                results[name] = {"success": True, "data": company_list[0]}
             else:
                 results[name] = {
                     "success": False,
                     "error": f"Company name '{name}' not found",
-                    "error_code": "NOT_FOUND"
+                    "error_code": "NOT_FOUND",
                 }
-        
+
         # Ensure all valid names are in results
         for name in valid_names:
             if name not in results:
                 results[name] = {
                     "success": False,
                     "error": f"Company name '{name}' not found",
-                    "error_code": "NOT_FOUND"
+                    "error_code": "NOT_FOUND",
                 }
-        
+
         return results
     except (sqlite3.Error, Exception) as e:
         logger.warning(f"Database name lookup failed: {e}")
@@ -672,7 +661,7 @@ def search_companies_by_company_name_impl(
             fallback_response = get_company_by_name_single(query_stripped, fuzzy=fuzzy)
             if fallback_response["success"] and "data" in fallback_response:
                 fallback_result = fallback_response["data"]
-                
+
                 # Add fallback result if not duplicate and we haven't hit limit
                 if len(results) < limit:
                     is_duplicate = any(

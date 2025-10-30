@@ -36,7 +36,7 @@ class CacheStructure(TypedDict):
 
 class SingleLookupResponse(TypedDict):
     """Response structure for single lookup operations.
-    
+
     On success: includes 'data', excludes 'error' and 'error_code'
     On failure: includes 'error' and 'error_code', excludes 'data'
     """
@@ -49,7 +49,7 @@ class SingleLookupResponse(TypedDict):
 
 class BatchLookupResponse(TypedDict):
     """Response structure for individual items in batch operations.
-    
+
     On success: includes 'data', excludes 'error' and 'error_code'
     On failure: includes 'error' and 'error_code', excludes 'data'
     """
@@ -62,7 +62,7 @@ class BatchLookupResponse(TypedDict):
 
 class MultipleLookupResponse(TypedDict):
     """Response structure for lookups that can return multiple companies (CIK, name).
-    
+
     On success: includes 'data', excludes 'error' and 'error_code'
     On failure: includes 'error' and 'error_code', excludes 'data'
     """

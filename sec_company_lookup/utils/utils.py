@@ -33,7 +33,7 @@ def download_sec_data() -> Dict[str, Any]:
 
     # Get user agent using the new configuration system
     from ..config import get_user_agent
-    
+
     try:
         user_agent = get_user_agent()
     except ValueError as e:

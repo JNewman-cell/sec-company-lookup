@@ -1,4 +1,3 @@
-
 """
 Example usage for sec_company_lookup package.
 Demonstrates basic lookups, search, batch operations, and cache info.

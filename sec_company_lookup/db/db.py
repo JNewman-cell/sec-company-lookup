@@ -25,13 +25,13 @@ DB_PATH = CACHE_DIR / "sec_company_lookup.db"
 def get_db_connection(row_factory: bool = True):
     """
     Context manager for database connections.
-    
+
     Args:
         row_factory: If True, set row_factory to sqlite3.Row for dict-like access
-        
+
     Yields:
         sqlite3.Connection: Database connection
-        
+
     Example:
         >>> with get_db_connection() as conn:
         >>>     cursor = conn.execute("SELECT * FROM companies")
@@ -127,7 +127,9 @@ def load_data_to_db(data: Dict[str, Any]) -> None:
             )
 
             conn.execute("COMMIT")
-            logger.info(f"Loaded {len(companies)} companies into database with FTS support")
+            logger.info(
+                f"Loaded {len(companies)} companies into database with FTS support"
+            )
 
         except Exception as e:
             conn.execute("ROLLBACK")
@@ -173,7 +175,11 @@ def search_companies_db(
 
                 for row in cursor:
                     results.append(
-                        {"cik": row["cik"], "ticker": row["ticker"], "name": row["title"]}
+                        {
+                            "cik": row["cik"],
+                            "ticker": row["ticker"],
+                            "name": row["title"],
+                        }
                     )
 
                 # If FTS didn't return enough results, fall back to LIKE search
@@ -237,7 +243,11 @@ def search_companies_db(
 
                 for row in cursor:
                     results.append(
-                        {"cik": row["cik"], "ticker": row["ticker"], "name": row["title"]}
+                        {
+                            "cik": row["cik"],
+                            "ticker": row["ticker"],
+                            "name": row["title"],
+                        }
                     )
 
             return results
@@ -359,7 +369,11 @@ def get_companies_by_company_names_db(
                 matches: List[Dict[str, Any]] = []
                 for row in cursor:
                     matches.append(
-                        {"cik": row["cik"], "ticker": row["ticker"], "name": row["title"]}
+                        {
+                            "cik": row["cik"],
+                            "ticker": row["ticker"],
+                            "name": row["title"],
+                        }
                     )
 
                 results[company_name] = matches
@@ -369,10 +383,9 @@ def get_companies_by_company_names_db(
         except sqlite3.Error as e:
             logger.error(f"Database batch company name lookup failed: {e}")
             raise
-        
-def get_companies_by_tickers_db(
-    tickers: List[str]
-) -> Dict[str, List[Dict[str, Any]]]:
+
+
+def get_companies_by_tickers_db(tickers: List[str]) -> Dict[str, List[Dict[str, Any]]]:
     """
     Batch lookup companies by multiple tickers using database.
 

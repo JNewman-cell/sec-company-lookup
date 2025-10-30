@@ -17,6 +17,7 @@ Note: Type checking warnings in this file are expected for test files that:
 - Use unittest.mock objects without explicit type annotations
 - Access TypedDict optional keys that are guaranteed to exist in specific test contexts
 """
+
 # pyright: reportPrivateUsage=false, reportUnknownParameterType=false
 # pyright: reportTypedDictNotRequiredAccess=false, reportUnknownArgumentType=false
 # pyright: reportUnknownMemberType=false, reportMissingParameterType=false
@@ -27,6 +28,7 @@ import time
 
 # Configure email for tests
 from sec_company_lookup.config import set_user_email
+
 set_user_email("test@example.com")
 
 import sec_company_lookup.sec_company_lookup as sec_module
@@ -133,7 +135,9 @@ class TestDataLoading:
     @patch("sec_company_lookup.sec_company_lookup.is_cache_expired")
     @patch("sec_company_lookup.sec_company_lookup.load_from_cache")
     @patch("sec_company_lookup.sec_company_lookup.update_data_impl")
-    def test_ensure_data_loaded_expired_cache(self, mock_update, mock_load, mock_expired):
+    def test_ensure_data_loaded_expired_cache(
+        self, mock_update, mock_load, mock_expired
+    ):
         """Test loading data when cache is expired."""
         mock_expired.return_value = True
         mock_load.return_value = (None, 0)
@@ -176,7 +180,9 @@ class TestTickerLookups:
         assert response_upper["success"] is True
         assert response_lower["success"] is True
         assert response_mixed["success"] is True
-        assert response_upper["data"] == response_lower["data"] == response_mixed["data"]
+        assert (
+            response_upper["data"] == response_lower["data"] == response_mixed["data"]
+        )
 
     def test_get_company_by_ticker_single_not_found(self):
         """Test ticker not found."""
@@ -207,7 +213,9 @@ class TestTickerLookups:
         """Test successful batch ticker lookup."""
         mock_db.return_value = {
             "AAPL": [{"cik": 320193, "ticker": "AAPL", "name": "Apple Inc."}],
-            "MSFT": [{"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}],
+            "MSFT": [
+                {"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}
+            ],
         }
 
         results = get_companies_by_tickers_batch(["AAPL", "MSFT"])
@@ -336,7 +344,9 @@ class TestCIKLookups:
         """Test successful batch CIK lookup."""
         mock_db.return_value = {
             320193: [{"cik": 320193, "ticker": "AAPL", "name": "Apple Inc."}],
-            789019: [{"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}],
+            789019: [
+                {"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}
+            ],
         }
 
         results = get_companies_by_ciks_batch([320193, 789019])
@@ -351,7 +361,9 @@ class TestCIKLookups:
         """Test batch CIK lookup with mixed int/string types."""
         mock_db.return_value = {
             320193: [{"cik": 320193, "ticker": "AAPL", "name": "Apple Inc."}],
-            789019: [{"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}],
+            789019: [
+                {"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}
+            ],
         }
 
         results = get_companies_by_ciks_batch([320193, "789019"])
@@ -462,7 +474,9 @@ class TestNameLookups:
         """Test successful batch name lookup."""
         mock_db.return_value = {
             "Apple Inc.": [{"cik": 320193, "ticker": "AAPL", "name": "Apple Inc."}],
-            "Microsoft Corporation": [{"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}],
+            "Microsoft Corporation": [
+                {"cik": 789019, "ticker": "MSFT", "name": "Microsoft Corporation"}
+            ],
         }
 
         results = get_companies_by_names_batch(["Apple Inc.", "Microsoft Corporation"])
@@ -582,6 +596,7 @@ class TestSearchFunctions:
     def test_search_companies_impl_database_fallback(self, mock_db):
         """Test search falls back to memory on database error."""
         import sqlite3
+
         mock_db.side_effect = sqlite3.Error("Database error")
 
         results = search_companies_impl("Apple", limit=5)
@@ -634,10 +649,13 @@ class TestSearchFunctions:
     def test_search_companies_by_company_name_impl_database_fallback(self, mock_db):
         """Test name search falls back to memory on database error."""
         import sqlite3
+
         mock_db.side_effect = sqlite3.Error("Database error")
 
         # Use exact name match to ensure fallback works (memory cache uses exact matches)
-        results = search_companies_by_company_name_impl("Apple Inc.", limit=5, fuzzy=False)
+        results = search_companies_by_company_name_impl(
+            "Apple Inc.", limit=5, fuzzy=False
+        )
 
         # Should have results from memory cache fallback
         assert len(results) >= 1

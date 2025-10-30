@@ -29,7 +29,7 @@ SAMPLE_MEMORY_CACHE: Dict[str, Any] = {
     },
     "by_ticker": {
         "AAPL": "0",
-        "MSFT": "1", 
+        "MSFT": "1",
         "GOOGL": "2",
         "AMZN": "3",
         "AAPL-WT": "4",
@@ -37,14 +37,14 @@ SAMPLE_MEMORY_CACHE: Dict[str, Any] = {
     },
     "by_cik": {
         320193: ["0", "4"],  # AAPL and AAPL-WT share same CIK
-        789019: ["1"],       # MSFT
-        1652044: ["2", "5"], # GOOGL and GOOG share same CIK
-        1018724: ["3"],      # AMZN
+        789019: ["1"],  # MSFT
+        1652044: ["2", "5"],  # GOOGL and GOOG share same CIK
+        1018724: ["3"],  # AMZN
     },
     "by_name": {
-        "apple inc.": ["0", "4"],    # Both AAPL entries
+        "apple inc.": ["0", "4"],  # Both AAPL entries
         "microsoft corporation": ["1"],
-        "alphabet inc.": ["2", "5"], # Both Google entries
+        "alphabet inc.": ["2", "5"],  # Both Google entries
         "amazon.com, inc.": ["3"],
     },
 }

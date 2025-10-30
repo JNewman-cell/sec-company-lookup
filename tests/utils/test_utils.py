@@ -10,6 +10,7 @@ from unittest.mock import patch, MagicMock, mock_open
 
 # Configure email for tests
 from sec_company_lookup.config import set_user_email
+
 set_user_email("test@example.com")
 
 from sec_company_lookup.utils.utils import (
