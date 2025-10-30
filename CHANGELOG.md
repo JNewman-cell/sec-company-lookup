@@ -61,7 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `get_companies_by_ciks()` - Batch CIK processing
   - `get_companies_by_company_names()` - Batch name processing
   - `search_companies_by_company_name()` - Advanced name search
-  - `get_companies_by_sector_search()` - Sector-based filtering
   - `update_data()` - Manual data synchronization
   - `clear_cache()` - Cache management
   - `get_cache_info()` - Cache statistics and health

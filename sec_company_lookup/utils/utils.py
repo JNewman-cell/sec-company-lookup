@@ -1,15 +1,14 @@
 """
-Utility functions for secmap package.
+Utility functions for sec-company-lookup package.
 
 This module contains utility functions for data fetching, cache management,
-and common operations used across the secmap package.
+and common operations used across the sec-company-lookup package.
 """
 
 import json
 import requests
 import time
 import logging
-import os
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
 
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 SEC_DATA_URL = "https://www.sec.gov/files/company_tickers.json"
-CACHE_DIR = Path.home() / ".secmap"
+CACHE_DIR = Path.home() / ".sec_company_lookup"
 DATA_FILE = CACHE_DIR / "company_data.json"
 CACHE_EXPIRY_HOURS = 24  # Refresh data every 24 hours
 
@@ -32,18 +31,13 @@ def download_sec_data() -> Dict[str, Any]:
     """Download the latest SEC company data."""
     logger.info("Downloading SEC company data...")
 
-    # Get user agent from environment variable with SEC-compliant default
-    # SEC requires User-Agent with contact information for fair access policy
-    default_user_agent = "sec-company-lookup/1.0 (jpnewman167@gmail.com)"
-    user_agent = os.getenv("SECMAP_USER_AGENT", default_user_agent)
-
-    # Validate user agent format (similar to SEC Edgar toolkit)
-    if not user_agent or len(user_agent.strip()) < 10:
-        raise ValueError(
-            "User-Agent is required and must include contact information. "
-            "Format: 'AppName/Version (contact@email.com)'. "
-            "Set SECMAP_USER_AGENT environment variable or use default."
-        )
+    # Get user agent using the new configuration system
+    from ..config import get_user_agent
+    
+    try:
+        user_agent = get_user_agent()
+    except ValueError as e:
+        raise ValueError(str(e)) from e
 
     headers = {
         "User-Agent": user_agent,
@@ -76,7 +70,7 @@ def download_sec_data() -> Dict[str, Any]:
         raise
 
 
-def is_cache_expired(last_update: float) -> bool:
+def is_cache_expired(last_update: Optional[float]) -> bool:
     """Check if the cache is expired."""
     if not last_update:
         return True

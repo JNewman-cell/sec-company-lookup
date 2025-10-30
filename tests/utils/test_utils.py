@@ -1,14 +1,18 @@
 """
-Tests for the secmap utilities functionality.
+Tests for the sec_company_lookup utilities functionality.
 """
 
 import pytest
 import json
 import time
+from typing import Any
 from unittest.mock import patch, MagicMock, mock_open
-from pathlib import Path
 
-from secmap.utils.utils import (
+# Configure email for tests
+from sec_company_lookup.config import set_user_email
+set_user_email("test@example.com")
+
+from sec_company_lookup.utils.utils import (
     download_sec_data,
     is_cache_expired,
     load_from_cache,
@@ -17,15 +21,7 @@ from secmap.utils.utils import (
     ensure_cache_dir,
 )
 
-# Sample test data mimicking SEC structure
-SAMPLE_SEC_DATA = {
-    "0": {"cik_str": "0000320193", "ticker": "AAPL", "title": "Apple Inc."},
-    "1": {"cik_str": "0000789019", "ticker": "MSFT", "title": "Microsoft Corporation"},
-    "2": {"cik_str": "0001652044", "ticker": "GOOGL", "title": "Alphabet Inc."},
-    "3": {"cik_str": "0001018724", "ticker": "AMZN", "title": "Amazon.com, Inc."},
-    "4": {"cik_str": "0000320193", "ticker": "AAPL-WT", "title": "Apple Inc."},
-    "5": {"cik_str": "0001652044", "ticker": "GOOG", "title": "Alphabet Inc."},
-}
+from ..test_data import SAMPLE_SEC_DATA
 
 
 class TestUtilityFunctions:
@@ -80,7 +76,7 @@ class TestUtilityFunctions:
 
     def test_ensure_cache_dir(self):
         """Test cache directory creation."""
-        with patch("secmap.utils.utils.CACHE_DIR") as mock_cache_dir:
+        with patch("sec_company_lookup.utils.utils.CACHE_DIR") as mock_cache_dir:
             mock_path = MagicMock()
             mock_cache_dir.__fspath__ = MagicMock(return_value=str(mock_path))
             mock_cache_dir.mkdir = MagicMock()
@@ -88,10 +84,12 @@ class TestUtilityFunctions:
             ensure_cache_dir()
             mock_cache_dir.mkdir.assert_called_once_with(exist_ok=True)
 
-    @patch("secmap.utils.utils.requests.get")
-    @patch("secmap.utils.utils.open", new_callable=mock_open)
-    @patch("secmap.utils.utils.ensure_cache_dir")
-    def test_download_sec_data_success(self, mock_ensure_dir, mock_file, mock_get):
+    @patch("sec_company_lookup.utils.utils.requests.get")
+    @patch("sec_company_lookup.utils.utils.open", new_callable=mock_open)
+    @patch("sec_company_lookup.utils.utils.ensure_cache_dir")
+    def test_download_sec_data_success(
+        self, mock_ensure_dir: Any, mock_file: Any, mock_get: Any
+    ) -> None:
         """Test successful SEC data download."""
         # Mock successful HTTP response
         mock_response = MagicMock()
@@ -106,9 +104,11 @@ class TestUtilityFunctions:
         mock_ensure_dir.assert_called_once()
         mock_file.assert_called_once()
 
-    @patch("secmap.utils.utils.requests.get")
-    @patch("secmap.utils.utils.DATA_FILE")
-    def test_download_sec_data_failure_with_cache(self, mock_data_file, mock_get):
+    @patch("sec_company_lookup.utils.utils.requests.get")
+    @patch("sec_company_lookup.utils.utils.DATA_FILE")
+    def test_download_sec_data_failure_with_cache(
+        self, mock_data_file: Any, mock_get: Any
+    ) -> None:
         """Test SEC data download failure with cache fallback."""
         # Mock the requests module properly
         import requests
@@ -121,9 +121,11 @@ class TestUtilityFunctions:
             result = download_sec_data()
             assert result == SAMPLE_SEC_DATA
 
-    @patch("secmap.utils.utils.requests.get")
-    @patch("secmap.utils.utils.DATA_FILE")
-    def test_download_sec_data_failure_no_cache(self, mock_data_file, mock_get):
+    @patch("sec_company_lookup.utils.utils.requests.get")
+    @patch("sec_company_lookup.utils.utils.DATA_FILE")
+    def test_download_sec_data_failure_no_cache(
+        self, mock_data_file: Any, mock_get: Any
+    ) -> None:
         """Test SEC data download failure without cache."""
         # Mock failed HTTP response
         mock_get.side_effect = Exception("Network error")
@@ -134,8 +136,8 @@ class TestUtilityFunctions:
         with pytest.raises(Exception):
             download_sec_data()
 
-    @patch("secmap.utils.utils.DATA_FILE")
-    def test_load_from_cache_success(self, mock_data_file):
+    @patch("sec_company_lookup.utils.utils.DATA_FILE")
+    def test_load_from_cache_success(self, mock_data_file: Any) -> None:
         """Test successful cache loading."""
         # Mock file exists and is not expired
         mock_stat = MagicMock()
@@ -148,8 +150,8 @@ class TestUtilityFunctions:
             assert data == SAMPLE_SEC_DATA
             assert timestamp == mock_stat.st_mtime
 
-    @patch("secmap.utils.utils.DATA_FILE")
-    def test_load_from_cache_expired(self, mock_data_file):
+    @patch("sec_company_lookup.utils.utils.DATA_FILE")
+    def test_load_from_cache_expired(self, mock_data_file: Any) -> None:
         """Test cache loading with expired file."""
         # Mock file exists but is expired (25 hours old)
         mock_stat = MagicMock()
@@ -161,8 +163,8 @@ class TestUtilityFunctions:
         assert data is None
         assert timestamp == 0
 
-    @patch("secmap.utils.utils.DATA_FILE")
-    def test_load_from_cache_no_file(self, mock_data_file):
+    @patch("sec_company_lookup.utils.utils.DATA_FILE")
+    def test_load_from_cache_no_file(self, mock_data_file: Any) -> None:
         """Test cache loading with no cache file."""
         mock_data_file.exists.return_value = False
 
@@ -170,9 +172,9 @@ class TestUtilityFunctions:
         assert data is None
         assert timestamp == 0
 
-    @patch("secmap.utils.utils.DATA_FILE")
-    @patch("secmap.db.db.DB_PATH")
-    def test_clear_cache_files(self, mock_db_path, mock_data_file):
+    @patch("sec_company_lookup.utils.utils.DATA_FILE")
+    @patch("sec_company_lookup.db.db.DB_PATH")
+    def test_clear_cache_files(self, mock_db_path: Any, mock_data_file: Any) -> None:
         """Test cache file clearing."""
         mock_data_file.exists.return_value = True
         mock_db_path.exists.return_value = True

@@ -1,0 +1,16 @@
+{
+  "include": [
+    "sec_company_lookup",
+    "tests"
+  ],
+  "exclude": [
+    "**/__pycache__"
+  ],
+  "typeCheckingMode": "basic",
+  "reportPrivateUsage": "none",
+  "reportUnknownParameterType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownMemberType": "none",
+  "reportTypedDictNotRequiredAccess": "none",
+  "pythonVersion": "3.9"
+}

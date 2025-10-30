@@ -1,4 +1,4 @@
-"""Utils module for secmap package."""
+"""Utils module for sec-company-lookup package."""
 
 from .utils import (
     ensure_cache_dir,

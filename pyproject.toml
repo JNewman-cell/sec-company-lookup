@@ -3,20 +3,21 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "secmap"
+name = "sec-company-lookup"
 version = "0.1.0"
 description = "Fast, cached SEC company data lookups by ticker, CIK, or company name"
 readme = "README.md"
 requires-python = ">=3.7"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     {name = "Jackson Newman", email = "jpnewman167@gmail.com"}
 ]
-keywords = ["SEC", "CIK", "ticker", "finance", "company", "lookup", "cache"]
+keywords = ["SEC", "CIK", "ticker", "finance", "company", "lookup", "cache", "edgar"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
@@ -24,11 +25,13 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Office/Business :: Financial",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
     "requests>=2.25.0",
+    "typing-extensions>=4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -38,23 +41,50 @@ dev = [
     "black",
     "flake8",
     "mypy",
+    "types-requests>=2.25.0",
+    "psutil",
 ]
 
 [project.urls]
-Homepage = "https://github.com/JNewman-cell/secmap"
-Repository = "https://github.com/JNewman-cell/secmap"
-Issues = "https://github.com/JNewman-cell/secmap/issues"
+Homepage = "https://github.com/JNewman-cell/sec-company-lookup"
+Repository = "https://github.com/JNewman-cell/sec-company-lookup"
+Issues = "https://github.com/JNewman-cell/sec-company-lookup/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["secmap*"]
+include = ["sec_company_lookup*"]
+
+[tool.setuptools]
+packages = ["sec_company_lookup", "sec_company_lookup.api", "sec_company_lookup.db", "sec_company_lookup.types", "sec_company_lookup.utils"]
 
 [tool.black]
 line-length = 88
-target-version = ['py37']
+target-version = ['py39', 'py310', 'py311', 'py312']
 
 [tool.mypy]
 python_version = "3.7"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=sec_company_lookup --cov-report=term-missing --cov-report=html"
+
+[tool.coverage.run]
+source = ["sec_company_lookup"]
+omit = ["tests/*", "examples/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

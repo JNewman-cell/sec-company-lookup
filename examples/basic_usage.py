@@ -1,114 +1,176 @@
+
 """
-Basic usage examples for the secmap package.
+Example usage for sec_company_lookup package.
+Demonstrates basic lookups, search, batch operations, and cache info.
 """
 
-from secmap import (
+from typing import Dict, Any, cast
+from sec_company_lookup import (
+    set_user_email,
     get_company,
-    get_company_by_ticker,
-    get_company_by_cik,
-    get_company_by_name,
-    update_data,
+    get_companies_by_tickers,
+    get_companies_by_ciks,
+    get_companies_by_names,
     search_companies,
+    search_companies_by_ticker,
+    search_companies_by_company_name,
+    update_data,
+    clear_cache,
+    get_cache_info,
 )
+from sec_company_lookup.types import CompanyData
 
 
-def basic_usage():
-    """Basic usage examples."""
-    print("=== Basic Usage Examples ===")
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
 
-    # Update data (download latest SEC data)
-    print("Updating SEC data...")
-    success = update_data()
-    print(f"Update successful: {success}")
+# Configure email for SEC API compliance (required)
+set_user_email("your@email.com")
 
-    # Look up by ticker
-    print("\n--- Lookup by Ticker ---")
-    company = get_company_by_ticker("AAPL")
-    print(f"AAPL: {company}")
-
-    # Look up by CIK
-    print("\n--- Lookup by CIK ---")
-    company = get_company_by_cik(320193)
-    print(f"CIK 320193: {company}")
-
-    # Look up by company name
-    print("\n--- Lookup by Company Name ---")
-    company = get_company_by_name("Apple Inc.")
-    print(f"Apple Inc.: {company}")
-
-    # Smart lookup (auto-detects type)
-    print("\n--- Smart Lookup ---")
-    examples = ["MSFT", "789019", "Microsoft Corporation"]
-    for example in examples:
-        company = get_company(example)
-        print(f"'{example}': {company}")
+# Alternative: Set environment variable SECCOMPANYLOOKUP_USER_EMAIL
 
 
-def search_example():
-    """Search functionality example."""
-    print("\n=== Search Examples ===")
+# ============================================================================
+# SINGLE LOOKUPS
+# ============================================================================
 
-    # Search for companies
-    results = search_companies("Apple", limit=5)
-    print(f"Search for 'Apple': {len(results)} results")
-    for result in results:
-        print(f"  {result}")
+# Lookup by ticker (returns CompanyData or None)
+company = get_companies_by_tickers("AAPL")
+# Returns: {'cik': 320193, 'ticker': 'AAPL', 'name': 'Apple Inc.'}
 
-    results = search_companies("GOOG", limit=3)
-    print(f"\nSearch for 'GOOG': {len(results)} results")
-    for result in results:
-        print(f"  {result}")
+# Lookup by CIK (returns List[CompanyData])
+companies = get_companies_by_ciks(320193)
+# Returns: [{'cik': 320193, 'ticker': 'AAPL', 'name': 'Apple Inc.'}]
+
+# Lookup by company name (returns CompanyData or None)
+company = get_companies_by_names("Apple Inc.")
+# Returns: {'cik': 320193, 'ticker': 'AAPL', 'name': 'Apple Inc.'}
+
+# Smart lookup - auto-detects input type (returns List[CompanyData])
+companies = get_company("MSFT")  # Ticker
+companies = get_company("789019")  # CIK
+companies = get_company("Microsoft Corporation")  # Name
 
 
-def batch_lookup_example():
-    """Example of batch lookups."""
-    print("\n=== Batch Lookup Example ===")
+# ============================================================================
+# BATCH LOOKUPS
+# ============================================================================
 
-    # List of tickers to look up
-    tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+# Batch ticker lookup (returns Dict[str, BatchLookupResponse])
+batch_results = get_companies_by_tickers(["AAPL", "MSFT", "GOOGL", "INVALID"])
+# Returns: {
+#   "AAPL": {"success": True, "data": {...}},
+#   "MSFT": {"success": True, "data": {...}},
+#   "GOOGL": {"success": True, "data": {...}},
+#   "INVALID": {"success": False, "error": "Ticker 'INVALID' not found", "error_code": "NOT_FOUND"}
+# }
 
-    print(f"Looking up {len(tickers)} companies...")
-    results = []
-
-    for ticker in tickers:
-        company = get_company_by_ticker(ticker)
-        if company:
-            results.append(company)
-            print(f"  {ticker}: {company['name']} (CIK: {company['cik']})")
+# Process batch results (works same for tickers and names - both return BatchLookupResponse)
+if isinstance(batch_results, dict):
+    for ticker, response in batch_results.items():
+        response_dict = cast(Dict[str, Any], response)
+        if response_dict["success"]:
+            data = cast(CompanyData, response_dict.get("data"))
+            # Process successful lookup: data['name'], data['cik'], data['ticker']
+            pass
         else:
-            print(f"  {ticker}: Not found")
+            # Handle error: response_dict['error'], response_dict['error_code']
+            pass
 
-    print(f"\nFound {len(results)} out of {len(tickers)} companies")
+# Batch CIK lookup (returns Dict[int|str, MultipleLookupResponse])
+# Note: CIKs can map to multiple companies (e.g., different share classes)
+batch_results_cik = get_companies_by_ciks([320193, 789019, 1652044])
+# Returns: {
+#   320193: {"success": True, "data": [{'cik': 320193, 'ticker': 'AAPL', 'name': 'Apple Inc.'}]},
+#   789019: {"success": True, "data": [{'cik': 789019, 'ticker': 'MSFT', 'name': 'MICROSOFT CORP'}]},
+#   1652044: {"success": True, "data": [{'cik': 1652044, 'ticker': 'GOOGL', 'name': 'Alphabet Inc.'}]}
+# }
+
+# Batch name lookup (returns Dict[str, BatchLookupResponse])
+# Note: Returns single best match per name (same structure as ticker batch lookup)
+batch_results_names = get_companies_by_names(["Apple Inc.", "Microsoft Corporation"])
+# Returns: {
+#   "Apple Inc.": {"success": True, "data": {'cik': 320193, 'ticker': 'AAPL', 'name': 'Apple Inc.'}},
+#   "Microsoft Corporation": {"success": True, "data": {'cik': 789019, 'ticker': 'MSFT', ...}}
+# }
+
+# Process batch name results (same structure as batch ticker results)
+if isinstance(batch_results_names, dict):
+    for name, response in batch_results_names.items():
+        response_dict = cast(Dict[str, Any], response)
+        if response_dict["success"]:
+            data = cast(CompanyData, response_dict.get("data"))
+            # Process successful lookup: data['name'], data['cik'], data['ticker']
+            pass
+        else:
+            # Handle error: response_dict['error'], response_dict['error_code']
+            pass
 
 
-def performance_example():
-    """Demonstrate performance with repeated lookups."""
-    print("\n=== Performance Example ===")
+# ============================================================================
+# SEARCH FUNCTIONS
+# ============================================================================
 
-    import time
+# General search (searches all fields)
+results = search_companies("Apple", limit=5)
+# Returns: [{'cik': ..., 'ticker': ..., 'name': ...}, ...]
 
-    # Warm up cache
-    get_company_by_ticker("AAPL")
+# Search by ticker
+results = search_companies_by_ticker("GOOG", limit=3)
 
-    # Time repeated lookups
-    start_time = time.time()
-    iterations = 1000
+# Search by company name (more precise)
+results = search_companies_by_company_name("Microsoft", limit=3)
 
-    for _ in range(iterations):
-        get_company_by_ticker("AAPL")
-        get_company_by_cik(320193)
-        get_company("Microsoft Corporation")
+# Fuzzy search (partial matches)
+results = search_companies_by_company_name("Micros", limit=5, fuzzy=True)
 
-    end_time = time.time()
-    total_time = end_time - start_time
-    avg_time = (total_time / (iterations * 3)) * 1000  # Convert to milliseconds
-
-    print(f"Performed {iterations * 3} lookups in {total_time:.4f} seconds")
-    print(f"Average lookup time: {avg_time:.4f} ms")
+# Exact search (no fuzzy matching)
+results = search_companies_by_company_name("Apple Inc.", fuzzy=False)
 
 
-if __name__ == "__main__":
-    basic_usage()
-    search_example()
-    batch_lookup_example()
-    performance_example()
+# ============================================================================
+# CACHE MANAGEMENT
+# ============================================================================
+
+# Get cache information
+cache_info = get_cache_info()
+# Returns: {
+#   'memory_cache_loaded': True,
+#   'memory_companies_count': 13000,
+#   'last_update_human': '2024-10-30 12:00:00',
+#   'cache_age_hours': 0.5,
+#   'cache_expired': False,
+#   'db_exists': True,
+#   'db_companies_count': 13000,
+#   'cache_dir': '/path/to/.sec_company_lookup'
+# }
+
+# Manually update data from SEC API (optional, auto-updates on import)
+success = update_data()
+
+# Clear all cache (forces re-download on next lookup)
+clear_cache()
+
+
+# ============================================================================
+# ERROR HANDLING
+# ============================================================================
+
+# Single ticker/name lookup returns None if not found
+company = get_companies_by_tickers("INVALID")  # Returns: None
+company = get_companies_by_names("Invalid Company Name")  # Returns: None
+
+# Single CIK lookup returns empty list if not found (CIKs can have multiple matches)
+companies = get_companies_by_ciks(99999999)  # Returns: []
+
+# Batch lookups return structured error responses
+results = get_companies_by_tickers(["AAPL", "INVALID"])
+# Returns: {
+#   "AAPL": {"success": True, "data": {...}},
+#   "INVALID": {"success": False, "error": "...", "error_code": "NOT_FOUND"}
+# }
+
+# Empty input handling
+search_companies("")  # Returns: []
+get_companies_by_tickers([])  # Returns: {}
