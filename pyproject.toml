@@ -50,10 +50,6 @@ Homepage = "https://github.com/JNewman-cell/sec-company-lookup"
 Repository = "https://github.com/JNewman-cell/sec-company-lookup"
 Issues = "https://github.com/JNewman-cell/sec-company-lookup/issues"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["sec_company_lookup*"]
-
 [tool.setuptools]
 packages = ["sec_company_lookup", "sec_company_lookup.api", "sec_company_lookup.db", "sec_company_lookup.types", "sec_company_lookup.utils"]
 
