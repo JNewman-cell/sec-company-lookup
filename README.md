@@ -1,6 +1,6 @@
 # sec-company-lookup
 
-[![Tests](https://github.com/JNewman-cell/sec-company-lookup/workflows/tests/badge.svg)](https://github.com/JNewman-cell/sec-company-lookup/actions)
+[![Tests](https://github.com/JNewman-cell/sec-company-lookup/actions/workflows/tests.yml/badge.svg)](https://github.com/JNewman-cell/sec-company-lookup/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Fast, cached SEC company lookups by ticker, CIK, or company name with automatic data updates and multi-level caching.
