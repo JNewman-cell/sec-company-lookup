@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sec-company-lookup"
-version = "0.1.0"
+version = "0.1.1"
 description = "Fast, cached SEC company data lookups by ticker, CIK, or company name"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -53,6 +53,9 @@ Issues = "https://github.com/JNewman-cell/sec-company-lookup/issues"
 
 [tool.setuptools]
 packages = ["sec_company_lookup", "sec_company_lookup.api", "sec_company_lookup.db", "sec_company_lookup.types", "sec_company_lookup.utils"]
+
+[tool.setuptools.package-data]
+sec_company_lookup = ["py.typed"]
 
 [tool.black]
 line-length = 88
